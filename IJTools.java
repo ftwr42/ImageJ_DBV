@@ -2,8 +2,6 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 
-import java.awt.*;
-
 import static java.lang.Thread.sleep;
 
 public class IJTools {
@@ -15,7 +13,7 @@ public class IJTools {
         int height = imageProcessor.getHeight();
 
         ImageTools ito = new ImageTools();
-        ImageProcessor tp = ito.createRGBImage(height+width, width+height, "turned: " + Double.toString(alpha));
+        ImageProcessor tp = ito.createRGBImage(height+width, width+height, "turned: " + Double.toString(alpha), ImageTools.WHITE);
 
         for (int i = height-1; i >= 0; i--) {
             for (int j = width-1; j >= 0 ; j--) {
@@ -66,7 +64,7 @@ public class IJTools {
         int height = imageProcessor.getHeight();
 
         ImageTools imageTools2 = new ImageTools();
-        ImageProcessor mirroredImage = imageTools2.createRGBImage(width, height, "mirroredImage");
+        ImageProcessor mirroredImage = imageTools2.createRGBImage(width, height, "mirroredImage", ImageTools.WHITE);
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
@@ -107,7 +105,7 @@ public class IJTools {
 
         ImageTools it2 = new ImageTools();
         ImagePlus im2 = it2.getImagePlus();
-        ImageProcessor ip2 = it2.createRGBImage(width, height, "Sliding Image");
+        ImageProcessor ip2 = it2.createRGBImage(width, height, "Sliding Image", ImageTools.WHITE);
         it2.showImage();
 
         int[] buf = new int[width];
@@ -145,7 +143,7 @@ public class IJTools {
     public static void createImageGleichverteilt(int width, int height) {
 
         ImageTools imageTools = new ImageTools();
-        ImageProcessor image = imageTools.createRGBImage(width, height, "Gleichverteilt");
+        ImageProcessor image = imageTools.createRGBImage(width, height, "Gleichverteilt", ImageTools.WHITE);
         imageTools.showImage();
 
         for (int i = 0; i < width; i++) {
@@ -184,7 +182,7 @@ public class IJTools {
         }
 
         ImageTools it_new = new ImageTools();
-        ImageProcessor ip_new = it_new.createRGBImage(hist.length, hist_height, "Histogram");
+        ImageProcessor ip_new = it_new.createRGBImage(hist.length, hist_height, "Histogram", ImageTools.WHITE);
         it_new.showImage();
 
         int sum=0;
@@ -256,7 +254,7 @@ public class IJTools {
 
     public static ImageTools createImageA(int width, int height) {
 
-        ImageTools imageA = new ImageTools().withImage(width, height, "ImageA");
+        ImageTools imageA = new ImageTools().withNewImage(width, height, "ImageA", ImageTools.WHITE);
         ImageProcessor ip = imageA.getImageProcessor();
 
         for (int i = 0; i < height; i++) {
@@ -276,7 +274,7 @@ public class IJTools {
 
         int pattern = 3;
 
-        ImageTools imageB = new ImageTools().withImage(width, height, "ImageA");
+        ImageTools imageB = new ImageTools().withNewImage(width, height, "ImageA", ImageTools.WHITE);
         ImageProcessor ip = imageB.getImageProcessor();
 
         for (int i = 0; i < height; i++) {
@@ -297,7 +295,7 @@ public class IJTools {
 
     public static ImageTools createImageCircle(int width, int height) {
 
-        ImageTools circle = new ImageTools().withImage(width, height, "ImageA");
+        ImageTools circle = new ImageTools().withNewImage(width, height, "ImageA", ImageTools.WHITE);
         ImageProcessor ip = circle.getImageProcessor();
         circle.showImage();
 
@@ -318,4 +316,66 @@ public class IJTools {
         return circle;
     }
 
+    public static void makeSimpleHistogram1k8(ImageTools tools, int width, int height) {
+        ImageProcessor ip = tools.getImageProcessor();
+        int width_ip = ip.getWidth();
+        int height_ip = ip.getHeight();
+
+        int[] histogram;
+        if (width < 256) {
+            histogram = ip.getHistogram(width);
+        } else {
+            histogram = ip.getHistogram(256);
+        }
+
+        double[] norms = new double[histogram.length];
+
+        double div = width*height;
+        for (int i = 0; i < histogram.length; i++) {
+            double norm = histogram[i]/div;
+            norms[i] = norm;
+        }
+
+        ImageTools hist_it = new ImageTools().withNewImage(width, height, "Histogram", ImageTools.WHITE);
+        ImageProcessor hist_ip = hist_it.getImageProcessor();
+
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height*(norms[i]) && j < height; j++) {
+                hist_ip.set(i, (height-1)-j, 0);
+            }
+        }
+
+        hist_it.showImage();
+    }
+
+    public static void makeHistogram1k8(ImageTools tools, int width, int height) {
+
+        ImageProcessor ip = tools.getImageProcessor();
+        int width_ip = ip.getWidth();
+        int height_ip = ip.getHeight();
+
+        int max = Integer.MIN_VALUE, min = Integer.MAX_VALUE;
+        int[] hist = new int[256];
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int val = ip.get(j, i);
+                hist[val]++;
+                if (max < hist[val]) {
+                    max = hist[val];
+                }
+                if (min > hist[val]) {
+                    min = hist[val];
+                }
+            }
+        }
+
+        ImageTools itHist = new ImageTools().withNewImage(width, height, "Histogram", ImageTools.WHITE);
+        ImageProcessor ipHist = itHist.getImageProcessor();
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                ipHist.set(i, (height-1)-j, 0);
+            }
+        }
+
+    }
 }
