@@ -9,7 +9,6 @@ public class ImageTools {
     public static final Integer WHITE = 0;
     private ImageProcessor imageProcessor;
     private ImagePlus imagePlus;
-    int[] rgb = new int[3];
 
     public ImageProcessor getImageProcessor() {
         return imageProcessor;
@@ -39,32 +38,34 @@ public class ImageTools {
 
     ImageProcessor createRGBImage(int width, int height, String title, int fill) {
 
-        if (fill == ImageTools.WHITE) {
-            imagePlus = NewImage.createRGBImage(title, width, height, 1, NewImage.FILL_WHITE);
-        } else {
-            imagePlus = NewImage.createRGBImage(title, width, height, 1, NewImage.FILL_WHITE);
-        }
+        imagePlus = NewImage.createRGBImage(title, width, height, 1, NewImage.FILL_WHITE);
         imageProcessor = imagePlus.getProcessor();
-//        imageProcessor = new ByteProcessor(width, height);
-//        imagePlus = new ImagePlus(title, imageProcessor);
-
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                imageProcessor.set(i, j, 255);
+        if (fill == ImageTools.WHITE) {
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    imageProcessor.set(i, j, 255);
+                }
+            }
+        } else {
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    imageProcessor.set(i, j, 0);
+                }
             }
         }
 
         return imageProcessor;
     }
 
-    public int[] getRGBofPixel(int pixel) {
+    public static int[] getRGBofPixel(int pixel) {
+        int[] rgb = new int[3];
         rgb[0] = (int)(pixel & 0xff0000) >> 16;
         rgb[1] = (int)(pixel & 0x00ff00) >> 8;
         rgb[2] = (int)(pixel & 0x0000ff);
         return rgb;
     }
 
-    public int getPixelOfRGB(int[] rgb) {
+    public static int getPixelOfRGB(int[] rgb) {
         return ((rgb[0] & 0xff)<<16) + ((rgb[1] & 0xff)<<8) + (rgb[2] & 0xff);
     }
 

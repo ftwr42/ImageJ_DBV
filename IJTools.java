@@ -321,27 +321,29 @@ public class IJTools {
         int width_ip = ip.getWidth();
         int height_ip = ip.getHeight();
 
+        double sq = width_ip*height_ip;
+
         int[] histogram;
-        if (width < 256) {
-            histogram = ip.getHistogram(width);
-        } else {
-            histogram = ip.getHistogram(256);
+        if (width < 256) {histogram = ip.getHistogram(width);
+        } else {histogram = ip.getHistogram(256);
         }
 
-        double[] norms = new double[histogram.length];
-
-        double div = width*height;
-        for (int i = 0; i < histogram.length; i++) {
-            double norm = histogram[i]/div;
-            norms[i] = norm;
+//        (K-1)/(M * N)
+        int[] lut = new int[width_ip * height_ip];
+        for (int i = 0; i < lut.length; i++) {
+            lut[i] = (int)((i * (256)) / (sq));
         }
 
         ImageTools hist_it = new ImageTools().withNewImage(width, height, "Histogram", ImageTools.WHITE);
         ImageProcessor hist_ip = hist_it.getImageProcessor();
 
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height*(norms[i]) && j < height; j++) {
-                hist_ip.set(i, (height-1)-j, 0);
+        double sum = 0;
+        for (int i = 0; i < histogram.length; i++) {
+//            double h = (histogram[i]/sq)*height;
+            double h = lut[histogram[i]];
+            sum += h;
+            for (int j = 0; j < sum && j < height; j++) {
+                hist_ip.set(i, (height-1)-j, ImageTools.getPixelOfRGB(new int[]{0, 255, 0}));
             }
         }
 
@@ -354,28 +356,26 @@ public class IJTools {
         int width_ip = ip.getWidth();
         int height_ip = ip.getHeight();
 
-        int max = Integer.MIN_VALUE, min = Integer.MAX_VALUE;
+        double max = Integer.MIN_VALUE, min = Integer.MAX_VALUE;
         int[] hist = new int[256];
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 int val = ip.get(j, i);
                 hist[val]++;
-                if (max < hist[val]) {
-                    max = hist[val];
-                }
-                if (min > hist[val]) {
-                    min = hist[val];
-                }
+                if (max < hist[val]) {max = hist[val];}
+                if (min > hist[val]) {min = hist[val];}
             }
         }
 
         ImageTools itHist = new ImageTools().withNewImage(width, height, "Histogram", ImageTools.WHITE);
         ImageProcessor ipHist = itHist.getImageProcessor();
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                ipHist.set(i, (height-1)-j, 0);
+
+        for (int i = 0; i < hist.length; i++) {
+            int h = (int)(height*(hist[i]/max));
+            for (int j = 0; j < h; j++) {
+                ipHist.set(i, (height-1)-j, ImageTools.getPixelOfRGB(new int[]{0, 255, 0}));
             }
         }
-
+        itHist.showImage();
     }
 }

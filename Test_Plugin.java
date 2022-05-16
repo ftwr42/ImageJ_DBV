@@ -7,14 +7,11 @@ public class Test_Plugin implements PlugIn {
     @Override
     public void run(String s) {
 
-//        ImageTools imageTools = new ImageTools().withImage("/Users/ftwr/WORKSPACES/W_UNI/W_DIGIBILD/lennaGrey.gif");
-//        imageTools.showImage();
-
-//        ImageTools imageTools = IJTools.createImageCircle(300, 300);
-
-        ImageTools tools = new ImageTools().withLoadedImage("/Users/ftwr/WORKSPACES/W_UNI/W_DIGIBILD/HelloWorld_DigiBild/images/lennaGrey.png");
+        ImageTools tools = new ImageTools().withLoadedImage("/Users/ftwr/WORKSPACES/W_UNI/W_DIGIBILD/" +
+                "HelloWorld_DigiBild/images/lennaGrey.png");
         tools.showImage();
 
+        IJTools.makeSimpleHistogram1k8(tools, 256, 150);
         IJTools.makeHistogram1k8(tools, 256, 150);
 
     }
