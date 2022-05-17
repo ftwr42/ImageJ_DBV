@@ -254,7 +254,7 @@ public class IJTools {
 
     public static ImageTools createImageA(int width, int height) {
 
-        ImageTools imageA = new ImageTools().withNewImage(width, height, "ImageA", ImageTools.WHITE);
+        ImageTools imageA = new ImageTools().withNewRGBImage(width, height, "ImageA", ImageTools.WHITE);
         ImageProcessor ip = imageA.getImageProcessor();
 
         for (int i = 0; i < height; i++) {
@@ -274,7 +274,7 @@ public class IJTools {
 
         int pattern = 3;
 
-        ImageTools imageB = new ImageTools().withNewImage(width, height, "ImageA", ImageTools.WHITE);
+        ImageTools imageB = new ImageTools().withNewRGBImage(width, height, "ImageA", ImageTools.WHITE);
         ImageProcessor ip = imageB.getImageProcessor();
 
         for (int i = 0; i < height; i++) {
@@ -295,7 +295,7 @@ public class IJTools {
 
     public static ImageTools createImageCircle(int width, int height) {
 
-        ImageTools circle = new ImageTools().withNewImage(width, height, "ImageA", ImageTools.WHITE);
+        ImageTools circle = new ImageTools().withNewRGBImage(width, height, "ImageA", ImageTools.WHITE);
         ImageProcessor ip = circle.getImageProcessor();
         circle.showImage();
 
@@ -323,27 +323,26 @@ public class IJTools {
 
         double sq = width_ip*height_ip;
 
-        int[] histogram;
-        if (width < 256) {histogram = ip.getHistogram(width);
-        } else {histogram = ip.getHistogram(256);
-        }
 
-//        (K-1)/(M * N)
-        int[] lut = new int[width_ip * height_ip];
-        for (int i = 0; i < lut.length; i++) {
-            lut[i] = (int)((i * (256)) / (sq));
-        }
+        int[] histogram = ip.getHistogram();
 
-        ImageTools hist_it = new ImageTools().withNewImage(width, height, "Histogram", ImageTools.WHITE);
+        int sum1 = 0;
+        for (int i = 0; i < histogram.length; i++) {
+            sum1 += histogram[i];
+        }
+        IJ.log("sum:"+sum1 + ", sq:"+sq);
+        ImageTools hist_it = new ImageTools().withNewRGBImage(width, height, "Histogram", ImageTools.WHITE);
         ImageProcessor hist_ip = hist_it.getImageProcessor();
 
         double sum = 0;
         for (int i = 0; i < histogram.length; i++) {
-//            double h = (histogram[i]/sq)*height;
-            double h = lut[histogram[i]];
+
+            double h = ((double)histogram[i]/sq)*(150*(sq/(100*100)));
+
             sum += h;
-            for (int j = 0; j < sum && j < height; j++) {
-                hist_ip.set(i, (height-1)-j, ImageTools.getPixelOfRGB(new int[]{0, 255, 0}));
+
+            for (int j = 0; j < h; j++) {
+                hist_ip.putPixel(i, (height-1)-j, ImageTools.getPixelOfRGB(new int[]{0, 255, 0}));
             }
         }
 
@@ -367,7 +366,7 @@ public class IJTools {
             }
         }
 
-        ImageTools itHist = new ImageTools().withNewImage(width, height, "Histogram", ImageTools.WHITE);
+        ImageTools itHist = new ImageTools().withNewRGBImage(width, height, "Histogram", ImageTools.WHITE);
         ImageProcessor ipHist = itHist.getImageProcessor();
 
         for (int i = 0; i < hist.length; i++) {
@@ -377,5 +376,59 @@ public class IJTools {
             }
         }
         itHist.showImage();
+    }
+
+    public static void createImpulseImage(int width, int height) {
+        ImageTools imageTools = new ImageTools().withNewRGBImage(width, height, "Impulse", ImageTools.BLACK);
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (i == (height-1)/2 && j == (width-1)/2) {
+                    imageTools.getImageProcessor().set(i, j, ImageTools.getPixelOfRGB(new int[]{255, 255, 255}));
+                }
+            }
+        }
+
+        imageTools.showImage();
+    }
+
+    public static void convolve(ImageTools imageTools, int[][] filter, int edge) {
+
+
+        ImageProcessor imageProcessor = imageTools.getImageProcessor();
+        int width = imageProcessor.getWidth();
+        int height = imageProcessor.getHeight();
+
+        int filter_height = filter.length;
+        int filter_width = filter[0].length;
+
+        ImageTools filter_it = new ImageTools().withNewRGBImage(width + filter_width,
+                height + filter_height, "Filtered", ImageTools.WHITE);
+        ImageProcessor filter_ip = filter_it.getImageProcessor();
+
+        simpleSquareFrame(filter_it, filter_width, ImageTools.getPixelOfRGB(new int[]{100, 100, 100}));
+
+        for (int i = filter_height; i < height+filter_height; i++) {
+            for (int j = filter_width; j < width+filter_width; j++) {
+                int val = imageProcessor.get(j-filter_width, i-filter_height);
+                filter_ip.putPixel(j, i, val);
+            }
+        }
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+
+
+                for (int k = 0; k < filter_height; k++) {
+                    for (int l = 0; l < filter_width; l++) {
+
+                    }
+                }
+
+
+            }
+        }
+
+        filter_it.showImage();
     }
 }

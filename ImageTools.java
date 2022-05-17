@@ -1,12 +1,12 @@
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.NewImage;
-import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 
 public class ImageTools {
 
     public static final Integer WHITE = 0;
+    public static final int BLACK = 1;
     private ImageProcessor imageProcessor;
     private ImagePlus imagePlus;
 
@@ -19,7 +19,7 @@ public class ImageTools {
         return this;
     }
 
-    public ImageTools withNewImage(int width, int height, String title, int fill) {
+    public ImageTools withNewRGBImage(int width, int height, String title, int fill) {
         createRGBImage(width, height, title, fill);
         return this;
     }
@@ -46,6 +46,12 @@ public class ImageTools {
                     imageProcessor.set(i, j, 255);
                 }
             }
+        } else if (fill == ImageTools.BLACK){
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    imageProcessor.set(i, j, ImageTools.getPixelOfRGB(new int[]{0, 0, 0}));
+                }
+            }
         } else {
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
@@ -56,6 +62,8 @@ public class ImageTools {
 
         return imageProcessor;
     }
+
+
 
     public static int[] getRGBofPixel(int pixel) {
         int[] rgb = new int[3];
