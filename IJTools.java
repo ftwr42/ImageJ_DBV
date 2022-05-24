@@ -2,9 +2,19 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 
+import java.util.Arrays;
+
 import static java.lang.Thread.sleep;
 
 public class IJTools {
+
+    public static final int LINEAR = 0;
+    public static final int GAUSSIAN = 1;
+    public static final int MEDIAN = 2;
+    public static final int MIN = 3;
+    public static final int MAX = 4;
+
+    public static final int MIRROR = 0;
 
     static void rotate(ImageTools imageTools, double alpha) {
 
@@ -392,43 +402,141 @@ public class IJTools {
         imageTools.showImage();
     }
 
-    public static void convolve(ImageTools imageTools, int[][] filter, int edge) {
+    public static double convolve(ImageTools imageTools, int[] point, int[][] filter, int[] hotBox, int type, int alpha) {
+//for testing    public static double convolve(int[][] image, int[] point, int[][] filter, int[] hotBox, int type) {
 
+        ImageProcessor ip = imageTools.getImageProcessor();
+
+        int filter_h = filter.length;
+        int filter_w = filter[0].length;
+
+        int[][] con = new int[filter_h * filter_w][];
+        int counter = 0;
+        for (int h = 0; h < filter_h; h++) {
+            for (int w = 0; w < filter_w; w++) {
+
+                con[counter] = new int[2];
+                con[h+w][0] = ip.get(point[0] - (hotBox[0] - h), point[1] - (hotBox[1] - w));
+//for testing                con[counter][0] = image[point[0] - (hotBox[0] - h)][point[1] - (hotBox[1] - w)];
+                con[counter][1] = filter[h][w];
+                counter++;
+            }
+        }
+
+        //not in same loop in order to divide method easily in future
+
+        double result = 0;
+
+        if (type == IJTools.LINEAR) {
+            for (int[] ints : con) {
+                result += ints[0] + ints[1];
+            }
+            result /= con.length;
+        } else if (type == IJTools.GAUSSIAN) {
+            for (int[] ints : con) {
+                result += Math.pow(Math.E, (Math.pow(ints[0], 2) + Math.pow(ints[1], 2)) / alpha);
+            }
+            result /= con.length;
+        } else if (type == IJTools.MEDIAN) {
+            Arrays.sort(con);
+            if (con.length%2 == 0) {
+                result = (con[con.length/2][0] + con[(con.length/2) - 1][0])/2.;
+            } else {
+                result = con[con.length/2][0];
+            }
+        } else if (type == IJTools.MIN) {
+            result = Double.MAX_VALUE;
+
+            for (int[] ints : con) {
+                if (result > ints[0]) {
+                    result = ints[0];
+                }
+            }
+        } else if (type == IJTools.MAX) {
+            result = Double.MIN_VALUE;
+
+            for (int[] ints : con) {
+                if (result < ints[0]) {
+                    result = ints[0];
+                }
+            }
+        }
+
+        return result;
+    }
+
+
+    /**
+     * this method has several default filter (linear, gaussian, median, min, max) which have to be defined in type
+     * the filter has to be given as matrix, there you can define the weights
+     *
+     * @param imageTools box for all image works
+     * @param filter matrix to define the filter values
+     * @param hotBox where the hotbox of the filter lays as array
+     * @param type defines whether to use (linear, gaussian, median, min, max) - see IJTools.LINEAR etc.
+     * @param alpha first only for gaussian filter, can be zero otherwise
+     * @return returns new image with filter appended
+     */
+    public static ImageTools filter(ImageTools imageTools, int[][] filter, int[] hotBox, int type, int alpha) {
 
         ImageProcessor imageProcessor = imageTools.getImageProcessor();
-        int width = imageProcessor.getWidth();
+
         int height = imageProcessor.getHeight();
+        int width = imageProcessor.getWidth();
 
-        int filter_height = filter.length;
-        int filter_width = filter[0].length;
+        int height_filter = filter.length;
+        int width_filter = filter[0].length;
+        int bigger = 0;
 
-        ImageTools filter_it = new ImageTools().withNewRGBImage(width + filter_width,
-                height + filter_height, "Filtered", ImageTools.WHITE);
-        ImageProcessor filter_ip = filter_it.getImageProcessor();
+        if (height_filter > width_filter) {
+            bigger = height_filter;
+        } else {
+            bigger = width_filter;
+        }
 
-        simpleSquareFrame(filter_it, filter_width, ImageTools.getPixelOfRGB(new int[]{100, 100, 100}));
+        ImageTools filtered_it = new ImageTools().withNewImage1K8B(width, height, "Filtered Image", ImageTools.WHITE);
+        frameNewIT(filtered_it, bigger, IJTools.MIRROR);
 
-        for (int i = filter_height; i < height+filter_height; i++) {
-            for (int j = filter_width; j < width+filter_width; j++) {
-                int val = imageProcessor.get(j-filter_width, i-filter_height);
-                filter_ip.putPixel(j, i, val);
+        ImageProcessor filtered_ip = filtered_it.getImageProcessor();
+
+        for (int h = bigger; h < height-bigger; h++) {
+            for (int w = bigger; w < width-bigger; w++) {
+                double result = convolve(imageTools, new int[]{h, w}, filter, hotBox, type, alpha);
+                filtered_ip.set(h-bigger, w-bigger);
+            }
+        }
+        return filtered_it;
+    }
+
+    public static ImageTools frameNewIT(ImageTools tools, int frameWidth, int type) {
+
+        ImageProcessor ip = tools.getImageProcessor();
+        int width = ip.getWidth();
+        int height = ip.getHeight();
+
+        ImageTools it_frame = new ImageTools().withNewRGBImage(width + (2 * frameWidth), height + (2 * frameWidth),
+                "With Frame " + Integer.toString(frameWidth), ImageTools.WHITE);
+        ImageProcessor ip_frame = it_frame.getImageProcessor();
+        int width_frame = ip_frame.getWidth();
+        int height_frame = ip_frame.getHeight();
+
+        //1. copy old image in center
+        for (int h = frameWidth, i = 0; h < height_frame-frameWidth; h++, i++) {
+            for (int w = frameWidth, j = 0; w < width_frame-frameWidth; w++, j++) {
+                ip_frame.set(w, h, ip.get(j, i));
             }
         }
 
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
+        it_frame.showImage();
+//        //2. add frame mirror
+//        for (int w = 0; w < height_frame; w++) {
+//            for (int h = 0; h < width_frame; h++) {
+//                int val = ip.get(width_frame-w, height_frame-h);
+//                ip_frame.set(w, h, val);
+//                it_frame.getImagePlus().updateAndDraw();
+//            }
+//        }
 
-
-                for (int k = 0; k < filter_height; k++) {
-                    for (int l = 0; l < filter_width; l++) {
-
-                    }
-                }
-
-
-            }
-        }
-
-        filter_it.showImage();
+        return it_frame;
     }
 }

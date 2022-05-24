@@ -10,8 +10,14 @@ public class Test_Plugin implements PlugIn {
         ImageTools tools = new ImageTools().withLoadedImage("/Users/ftwr/WORKSPACES/W_UNI/W_DIGIBILD/HelloWorld_DigiBild/images/greyAutopsie.jpg");
         tools.showImage();
 
-        IJTools.makeSimpleHistogram1k8(tools, 256, 150);
-
+        int[][] filter = {
+                {0, 1, 2},
+                {3, 4, 5},
+                {6, 7, 8}
+        };
+        
+        ImageTools imageTools = IJTools.frameNewIT(tools, 40, IJTools.MIRROR);
+        imageTools.showImage();
 
     }
 }
